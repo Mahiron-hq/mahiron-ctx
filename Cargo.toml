@@ -1,0 +1,73 @@
+[package]
+name = "mahiron-ctx"
+version = "0.1.0"
+edition = "2021"
+rust-version = "1.77"
+license = "MIT OR Apache-2.0"
+description = "Consolidate a codebase into a single, faithfully reproduced document."
+repository = "https://github.com/mahiron/mahiron-ctx"
+homepage = "https://github.com/mahiron/mahiron-ctx"
+documentation = "https://docs.rs/mahiron-ctx"
+readme = "README.md"
+categories = ["command-line-utilities", "development-tools"]
+keywords = ["codebase", "context", "digest", "mcp", "tokenizer"]
+exclude = ["/.github"]
+
+[lib]
+name = "mahiron_ctx"
+path = "src/lib.rs"
+
+[[bin]]
+name = "mahiron-ctx"
+path = "src/bin/mahiron-ctx.rs"
+
+[[bin]]
+name = "mhrn"
+path = "src/bin/mhrn.rs"
+
+[dependencies]
+chardetng = "0.1"
+clap = { version = "4.5", features = ["derive", "wrap_help"] }
+ctrlc = { version = "3.4", features = ["termination"] }
+encoding_rs = "0.8"
+globset = "0.4"
+ignore = "0.4"
+getrandom = "0.2"
+inventory = "0.3"
+memchr = "2.7"
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+tempfile = "3.20"
+thiserror = "1.0"
+tiktoken-rs = "0.6"
+
+arboard = { version = "3.4", optional = true }
+notify = { version = "6.1", optional = true }
+prettyplease = { version = "0.2", optional = true }
+syn = { version = "2.0", features = ["full", "parsing", "printing", "extra-traits", "visit-mut"], optional = true }
+
+[[bench]]
+name = "packaging"
+harness = false
+
+[dev-dependencies]
+proptest = "1.4"
+tempfile = "3.20"
+
+[features]
+# `mcp-sse` is deliberately not a default: it exposes a listening socket, and a
+# packaging tool should not open one unless it was asked to.
+default = ["clipboard", "watch", "compress-rust"]
+clipboard = ["dep:arboard"]
+watch = ["dep:notify"]
+compress-rust = ["dep:syn", "dep:prettyplease"]
+mcp-sse = []
+
+[profile.release]
+opt-level = 3
+lto = "thin"
+codegen-units = 1
+strip = "symbols"
+
+[package.metadata.docs.rs]
+all-features = true

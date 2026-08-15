@@ -1,0 +1,105 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+env:
+  CARGO_TERM_COLOR: always
+  RUSTFLAGS: -D warnings
+
+jobs:
+  test:
+    name: ${{ matrix.os }} / ${{ matrix.toolchain }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+        toolchain: [stable]
+        include:
+          - os: ubuntu-latest
+            toolchain: "1.77"
+            locked: "--locked"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: ${{ matrix.toolchain }}
+          components: rustfmt, clippy
+      - uses: Swatinem/rust-cache@v2
+      - run: cargo fmt --all --check
+        if: matrix.os == 'ubuntu-latest' && matrix.toolchain == 'stable'
+      - run: cargo clippy --all-targets --all-features
+        if: matrix.os == 'ubuntu-latest' && matrix.toolchain == 'stable'
+      # The declared minimum is only meaningful against the dependency versions the
+      # lockfile pins. Resolving afresh made this job test whatever crates.io happened to
+      # hold that morning, so it would begin failing on a dependency's own MSRV bump
+      # rather than on a change to this crate.
+      - run: cargo test --all-features ${{ matrix.locked }}
+      # The degraded paths a build without the optional features takes are behaviour, not
+      # just compilation: each disabled feature has to report why rather than do nothing.
+      - run: cargo test --no-default-features ${{ matrix.locked }}
+      - run: cargo build --release --all-features
+
+  cross:
+    name: ${{ matrix.target }}
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        target: [aarch64-unknown-linux-gnu, aarch64-apple-darwin]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
+      - uses: Swatinem/rust-cache@v2
+      - run: cargo check --target ${{ matrix.target }} --all-features
+
+  # Nothing here gates a merge: the numbers are recorded for comparison by hand. Named so
+  # that it does not read as a threshold next to the jobs that do gate.
+  benchmark-record:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+      - run: cargo bench | tee benchmark.txt
+      - uses: actions/upload-artifact@v4
+        with:
+          name: benchmark
+          path: benchmark.txt
+
+  # Resolving the declared floors rather than the newest compatible version. `tempfile`
+  # was declared at 3.15 while the code called an API added in 3.20, and nothing caught it
+  # because every job resolved the newest version there was.
+  minimal-versions:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@nightly
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+      - run: cargo +nightly generate-lockfile -Z minimal-versions
+      - run: cargo check --all-features --all-targets --locked
+
+  digest-is-current:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+      - run: cargo run --release --bin mhrn -- --include 'src/**' -o docs/context.md --force
+      # `git diff` does not consider untracked files, and docs/context.md was untracked,
+      # so this job passed no matter what the tool produced. `git status --porcelain` sees
+      # both an untracked file and a modified one, which is what the check needs.
+      - name: docs/context.md matches what the tool produces
+        run: |
+          changed=$(git status --porcelain -- docs/context.md)
+          if [ -n "$changed" ]; then
+            echo "docs/context.md is out of date or untracked; regenerate and commit it:"
+            echo "$changed"
+            git --no-pager diff -- docs/context.md
+            exit 1
+          fi
