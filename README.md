@@ -2,7 +2,13 @@
 
 > Development is temporarily paused.
 
-Consolidate a codebase into a single, faithfully reproduced document — for pasting into a
+| | |
+|---|---|
+| Language | Rust |
+| License | Apache-2.0 |
+| Status | Development is temporarily paused |
+
+Consolidate a codebase into a single, faithfully reproduced document - for pasting into a
 model, attaching to a review, or archiving as a snapshot.
 
 Installed as two binaries: `mahiron-ctx` and the shorter alias `mhrn`. They are the same
@@ -70,14 +76,14 @@ changes the speed and not the number; and file content is borrowed from the byte
 until something actually rewrites it.
 
 **Discovery is metadata-only.** Traversal runs in parallel and collects paths, sizes and
-classifications — never content. The candidate list is sorted once, and composition then
+classifications - never content. The candidate list is sorted once, and composition then
 streams each file's content through in that order. Memory stays proportional to the
 largest single file rather than to the size of the tree, and the output is byte-identical
 across runs regardless of how the traversal threads interleaved.
 
 Composition writes the file sections into a spool first, then emits the preface, the
 structural overview and the spooled sections into the destination. That extra step is what
-lets the preface state the number of files the document actually contains — a file that
+lets the preface state the number of files the document actually contains - a file that
 turns out to be unreadable at composition time is dropped from both the document and the
 count, and the summary and the document therefore always agree.
 
@@ -94,8 +100,8 @@ Highest first:
 2. the tool's own ignore file (`.mahironignore`, `.mhrnignore`)
 3. version-control ignore rules (`.gitignore`, `.ignore`, `core.excludesFile`, `.git/info/exclude`)
 4. built-in defaults (hidden entries, well-known generated and dependency directories,
-   lock files — `Cargo.lock`, `package-lock.json`, `go.sum` and the rest, which are
-   machine-generated, enormous and of no use to a reader — and files whose names identify
+   lock files - `Cargo.lock`, `package-lock.json`, `go.sum` and the rest, which are
+   machine-generated, enormous and of no use to a reader - and files whose names identify
    them as credentials: `.env`, `id_rsa`, `.npmrc`, anything ending `.pem` or `.key`)
 
 Within (1), the more specific pattern wins: a pattern is scored by how much of it is
@@ -126,7 +132,7 @@ documented exception:
 - **XML and JSON are exact in every case.** Content is carried in character-data sections
   or as a JSON string, neither of which needs the content to end in any particular way.
 - **Markdown and text place their closing delimiter on its own line.** A file whose last
-  line has no newline therefore gains one *newline that belongs to the delimiter* — the
+  line has no newline therefore gains one *newline that belongs to the delimiter* - the
   file's own bytes are otherwise untouched. Use `-f json` or `-f xml` when byte-exactness
   at that boundary matters. The test suite asserts this rule as stated, rather than
   tolerating a general difference.
@@ -151,13 +157,13 @@ by property tests as well as by fixed cases.
 | json | `-f json`, or `.json` | Nested `tree`, flat `files` array of `{path, content}`, `schemaVersion` |
 
 The format is inferred from the output file's extension when `--format` is not given, and
-never affects which files are included — only how they are rendered. Asking for one format
+never affects which files are included - only how they are rendered. Asking for one format
 while naming a file that says another (`-f markdown -o out.xml`) is refused rather than
 resolved silently, because a file whose extension lies about its contents is a trap for
 whatever reads it next. An extension the tool has no opinion about contradicts nothing.
 
 Markdown fences carry the language identifier a highlighter expects rather than the raw
-extension — `rust` not `rs`, `yaml` not `yml`, `bash` not `sh` — with well-known extensionless
+extension - `rust` not `rs`, `yaml` not `yml`, `bash` not `sh` - with well-known extensionless
 names (`Makefile`, `Dockerfile`) recognised too. Around 180 extensions are mapped; anything
 unmapped is passed through verbatim rather than dropped or guessed at.
 
@@ -177,34 +183,34 @@ is filling a context window.
 
 On a terminal, scanning shows an animated indicator with a running file count, retires
 itself with a completion line, and hands over to a proportional bar during packaging. A
-dedicated thread drives the redraw, so work that produces no events for several seconds — a
-large tree, a remote retrieval — still looks alive rather than hung. Writing the assembled
+dedicated thread drives the redraw, so work that produces no events for several seconds - a
+large tree, a remote retrieval - still looks alive rather than hung. Writing the assembled
 document out gets its own byte-wise bar, because on a large codebase that stage takes
 longer than everything before it. The indicator and the summary are plain ASCII, because a
 console on a legacy code page renders anything else as replacement characters. Redirected
 runs print none of it.
 
-The token count is exact for the reference encoding it names — `cl100k_base` by default,
-`o200k_base` with `--token-encoding o200k_base` — not a heuristic and not rounded. It is
+The token count is exact for the reference encoding it names - `cl100k_base` by default,
+`o200k_base` with `--token-encoding o200k_base` - not a heuristic and not rounded. It is
 computed while the document streams past, at chunk boundaries chosen so the streamed result
 is identical to tokenising the whole document at once. `--verify-tokens` recounts from the
 delivered file and reports any disagreement; the test suite asserts the two paths agree
 exactly for every corpus case in every format. A different model with a different
-tokeniser will of course give a different number — the encoding is named alongside the
+tokeniser will of course give a different number - the encoding is named alongside the
 count for that reason.
 
 Exit status is `0` for a clean run, `1` for a run that completed with warnings, and `2` for
-a failure — so a pipeline can distinguish "worked" from "worked, but look at this". A
+a failure - so a pipeline can distinguish "worked" from "worked, but look at this". A
 routine exclusion is not a warning: a binary file skipped by design, or a directory pruned
 by a rule you asked for, appears in the exclusion breakdown and nowhere else. Warnings are
-reserved for what you might want to act on — a file that could not be read, an encoding
+reserved for what you might want to act on - a file that could not be read, an encoding
 that could not be determined, a link not followed.
 
 Reported separately, and deliberately not affecting the status, are **notices**: mixed
 line endings, a language this build cannot reduce, credentials left out. None of these is
 a failure and none of them has an action attached. Counting them as warnings meant that
 any repository touched from both Windows and Unix exited `1` on a completely successful
-run, and any repository with more than one language did too — which cost the exit code the
+run, and any repository with more than one language did too - which cost the exit code the
 very distinction it exists to make. A notice about an unsupported language is raised once
 for the whole run, naming the languages and the file count, rather than once per file.
 
@@ -230,7 +236,7 @@ file instead, so that fetching a repository cannot silently change what a run in
 server-sent events with `--transport sse` (loopback only unless `--bind` says otherwise,
 with a warning when it does). Two tools are exposed: `package_codebase` and
 `preview_package`. Documents up to 256 KiB are returned inline; larger ones are written to
-a temporary file, and that file is **not** cleaned up — the path is returned precisely so
+a temporary file, and that file is **not** cleaned up - the path is returned precisely so
 the agent can read it afterwards. The server has no capability the command line lacks.
 
 The SSE transport is not a default feature. Enable it with `--features mcp-sse` if you
@@ -239,7 +245,7 @@ asked to. When it is enabled, requests must come from the same machine: `Origin`
 `Host` are checked against loopback, because any page in your browser can reach
 `127.0.0.1` and a request that writes a file is a request worth authenticating. A message
 must name a live session, request bodies are capped, and connections have timeouts and a
-concurrency limit. Writing to a path that already exists requires `force` on the request —
+concurrency limit. Writing to a path that already exists requires `force` on the request -
 it is not implied.
 
 ## Building
@@ -298,7 +304,7 @@ shape of a documentation-freshness job:
 - name: Fail if it is out of date
   run: |
     changed=$(git status --porcelain -- docs/context.md)
-    if [ -n "$changed" ]; then
+    if [-n "$changed" ]; then
       echo "docs/context.md is out of date or untracked; regenerate and commit it"
       git --no-pager diff -- docs/context.md
       exit 1
@@ -312,7 +318,7 @@ not be listed in `.mahironignore`, or the check has nothing to compare against.
 
 ## Privacy
 
-No telemetry, no crash reporting, no update checks — none exist in any build. The only
+No telemetry, no crash reporting, no update checks - none exist in any build. The only
 network activity the tool can perform is retrieving a remote source you named, and serving
 the SSE transport you asked for.
 
