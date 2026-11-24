@@ -1,5 +1,7 @@
 # mahiron-ctx
 
+> Development is temporarily paused.
+
 Consolidate a codebase into a single, faithfully reproduced document — for pasting into a
 model, attaching to a review, or archiving as a snapshot.
 
